@@ -15,6 +15,7 @@ STREAM_PTV="VLC"
 CACHE_PTV=3
 IP4_TIME=5000
 ENDODE_ARG=""
+TVIP="false"
 USER_AGENT="'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0'"
 
 CONFIG_LOG="$WRK_DIR/stream-tvh.conf"
@@ -44,6 +45,7 @@ fi
 
 [ -f "$CH_TRANSCODE" ] && IS_NAME=`grep -m 1 "^$CH_NAME #" $CH_TRANSCODE | awk -F\\# '{print $1}' | sed 's/^[ \t]*//; s/[ \t]*$//'`
 [ "$FF_TRANSCODE" == "low" ] && ENDODE_ARG="-vf scale=iw/2:ih/2"
+[ -f "/run/lock/start.tvip" ] && TVIP="true"
 
 if [ -f "/usr/bin/cvlc" -a "$STREAM_PTV" == "VLC" ]; then
   if [ "$LOG_VLC" == "info" ]; then
@@ -53,6 +55,7 @@ if [ -f "/usr/bin/cvlc" -a "$STREAM_PTV" == "VLC" ]; then
   fi
   BUF_TIME=$(expr $CACHE_PTV \* 1000)
 
+  [ "$TVIP" == "true" ] && IS_NAME=""
   if [ -n "$IS_NAME" ]; then
       echo "*** IPTV stream --- VLC+Transcode --- mode: [$CH_NAME] - [$URL] (Cache time: 2 sec.)***" >&2
       URL=`curl -s $URL`
@@ -71,15 +74,25 @@ if [ -f "/usr/bin/cvlc" -a "$STREAM_PTV" == "VLC" ]; then
       URL=`curl -s $URL`
       if [ "$URL" != "" ]; then
         echo "*** IPTV stream --- Real URL ---: [$URL] ***" >&2
-        /usr/bin/cvlc $DEBUG --ipv4-timeout=$IP4_TIME --network-caching=$BUF_TIME \
-                             --no-drop-late-frames --no-skip-frames \
-                             "$URL" :http-user-agent="$USER_AGENT" \
-                             --sout '#std{mux=ts,access=file,dst=-}'
+        if [ "$TVIP" != "true" ]; then
+          /usr/bin/cvlc $DEBUG --ipv4-timeout=$IP4_TIME --network-caching=$BUF_TIME \
+                               --no-drop-late-frames --no-skip-frames \
+                               "$URL" :http-user-agent="$USER_AGENT" \
+                               --sout '#std{mux=ts,access=file,dst=-}'
+        else
+          echo "*** IPTV stream --- TVIP mode ---: add FFmpeg ***" >&2
+          /usr/bin/cvlc $DEBUG --ipv4-timeout=$IP4_TIME --network-caching=$BUF_TIME \
+                               --no-drop-late-frames --no-skip-frames \
+                               "$URL" :http-user-agent="$USER_AGENT" \
+                               --sout '#std{mux=ts,access=file,dst=-}' | \
+          /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -i - -c copy -analyzeduration 32 -probesize 32 -map 0 -f mpegts pipe:1
+        fi
       else
         play_empty
       fi
   fi
 else
+  [ "$TVIP" == "true" ] && IS_NAME=""
   if [ -n "$IS_NAME" ]; then
     echo "*** IPTV stream --- FFmpeg+Transcode --- mode: [$CH_NAME] - [$URL] ***" >&2
     URL=`curl -s $URL`
@@ -94,9 +107,15 @@ else
     URL=`curl -s $URL`
     if [ "$URL" != "" ]; then
       echo "*** IPTV stream --- Real URL ---: [$URL] ***" >&2
-      /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -reconnect 1 -i "$URL" -max_muxing_queue_size 9999 -c copy -analyzeduration 0 -probesize 32 -map 0 -f mpegts pipe:1
+      if [ "$TVIP" != "true" ]; then
+        /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -reconnect 1 -i "$URL" -max_muxing_queue_size 9999 -c copy -analyzeduration 0 -probesize 32 -map 0 -f mpegts pipe:1
+      else
+        echo "*** IPTV stream --- to TVIP --- ***" >&2
+        /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -reconnect 1 -i "$URL" -c copy -analyzeduration 32 -probesize 32 -map 0 -f mpegts pipe:1
+      fi
     else
       play_empty
     fi
   fi
+fi
 fi
