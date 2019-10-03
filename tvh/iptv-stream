@@ -8,6 +8,7 @@ WRK_DIR="/storage/.config/puzzle/tvh"
 CH_FILE="$WRK_DIR/tvh-channels.list"
 CH_TRANSCODE="$WRK_DIR/tvh-transcode.list"
 IS_NAME=''
+ACE_URL=''
 
 LOG_VLC="quiet"
 LOG_FFMPEG="quiet"
@@ -33,9 +34,9 @@ play_empty (){
 }
 
 FIND_CH_NAME=`echo "$CH_NAME" | sed 's|\[|\\\[|g; s|\]|\\\]|g'`
-URL=`grep -m 1 "^$FIND_CH_NAME #" $CH_FILE | awk -F\\# '{print $2}' | sed 's/^[ \t]*//; s/[ \t]*$//'`
+URL_PTV=`grep -m 1 "^$FIND_CH_NAME #" $CH_FILE | awk -F\\# '{print $2}' | sed 's/^[ \t]*//; s/[ \t]*$//'`
 
-if [ -z "$URL" ]; then
+if [ -z "$URL_PTV" ]; then
   echo "*** IPTV link --- empty URL for ---: [$CH_NAME] ***" >&2
   URL="/storage/.config/puzzle/logo/empty-stream.mp4"
   /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -i "$URL" -c copy -f mpegts pipe:1
@@ -46,6 +47,13 @@ fi
 [ -f "$CH_TRANSCODE" ] && IS_NAME=`grep -m 1 "^$CH_NAME #" $CH_TRANSCODE | awk -F\\# '{print $1}' | sed 's/^[ \t]*//; s/[ \t]*$//'`
 [ "$FF_TRANSCODE" == "low" ] && ENDODE_ARG="-vf scale=iw/2:ih/2"
 [ -f "/run/lock/start.tvip" ] && TVIP="true"
+
+URL=`curl -s $URL_PTV`
+
+if [ "$STREAM_PTV" == "VLC" ]; then
+  ACE_URL=`echo $URL | grep '/ace/getstream'`
+  [ -z "$ACE_URL" -a "$HYBRID_MODE" == "yes" ] && STREAM_PTV="FFmpeg"
+fi
 
 if [ -f "/usr/bin/cvlc" -a "$STREAM_PTV" == "VLC" ]; then
   if [ "$LOG_VLC" == "info" ]; then
@@ -58,20 +66,18 @@ if [ -f "/usr/bin/cvlc" -a "$STREAM_PTV" == "VLC" ]; then
   [ "$TVIP" == "true" ] && IS_NAME=""
   if [ -n "$IS_NAME" ]; then
       echo "*** IPTV stream --- VLC+Transcode --- mode: [$CH_NAME] - [$URL] (Cache time: 2 sec.)***" >&2
-      URL=`curl -s $URL`
       if [ "$URL" != "" ]; then
         echo "*** IPTV stream --- Real URL ---: [$URL] ***" >&2
         /usr/bin/cvlc $DEBUG --ipv4-timeout=$IP4_TIME --network-caching=2000 \
                              --no-drop-late-frames --no-skip-frames \
                              "$URL" :http-user-agent="$USER_AGENT" \
                              --sout '#std{mux=ts,access=file,dst=-}' | \
-        /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -i - -max_muxing_queue_size 9999 -c:v mpeg2video -q:v 1 $ENDODE_ARG -c:a copy -map 0 -f mpegts pipe:1
+        /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -i - -max_muxing_queue_size 9999 -c:v mpeg2video -q:v 1 $ENDODE_ARG -c:a copy -c:s copy -map 0 -f mpegts pipe:1
       else
         play_empty
       fi
   else
       echo "*** IPTV stream --- VLC --- mode: [$CH_NAME] - [$URL] (Cache time: $CACHE_PTV sec.)***" >&2
-      URL=`curl -s $URL`
       if [ "$URL" != "" ]; then
         echo "*** IPTV stream --- Real URL ---: [$URL] ***" >&2
         if [ "$TVIP" != "true" ]; then
@@ -95,16 +101,14 @@ else
   [ "$TVIP" == "true" ] && IS_NAME=""
   if [ -n "$IS_NAME" ]; then
     echo "*** IPTV stream --- FFmpeg+Transcode --- mode: [$CH_NAME] - [$URL] ***" >&2
-    URL=`curl -s $URL`
     if [ "$URL" != "" ]; then
       echo "*** IPTV stream --- Real URL ---: [$URL] ***" >&2
-      /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -i "$URL" -max_muxing_queue_size 9999 -c:v mpeg2video -q:v 1 $ENDODE_ARG -c:a copy -map 0 -f mpegts pipe:1
+      /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -i "$URL" -max_muxing_queue_size 9999 -c:v mpeg2video -q:v 1 $ENDODE_ARG -c:a copy -c:s copy -map 0 -f mpegts pipe:1
     else
       play_empty
     fi
   else
     echo "*** IPTV stream --- FFmpeg --- mode: [$CH_NAME] - [$URL] ***" >&2
-    URL=`curl -s $URL`
     if [ "$URL" != "" ]; then
       echo "*** IPTV stream --- Real URL ---: [$URL] ***" >&2
       if [ "$TVIP" != "true" ]; then
@@ -117,5 +121,4 @@ else
       play_empty
     fi
   fi
-fi
 fi
