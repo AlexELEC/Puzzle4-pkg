@@ -28,42 +28,42 @@ CONFIG_FILE="/storage/.cache/services/ptv.conf"
 play_empty (){
   echo "*** IPTV stream --- Not found URL for ---: [$CH_NAME] ***" >&2
   URL="/storage/.config/puzzle/logo/empty-stream.mp4"
-  /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -i "$URL" -c copy -f mpegts pipe:1
-  sleep 5
+  /usr/bin/ffmpeg -v quiet -hide_banner -i "$URL" -c copy -f mpegts pipe:1
+  sleep 3
   exit 3
 }
 
 FIND_CH_NAME=`echo "$CH_NAME" | sed 's|\[|\\\[|g; s|\]|\\\]|g'`
 URL_PTV=`grep -m 1 "^$FIND_CH_NAME #" $CH_FILE | awk -F\\# '{print $2}' | sed 's/^[ \t]*//; s/[ \t]*$//'`
 
-if [ -z "$URL_PTV" ]; then
-  echo "*** IPTV link --- empty URL for ---: [$CH_NAME] ***" >&2
-  URL="/storage/.config/puzzle/logo/empty-stream.mp4"
-  /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -i "$URL" -c copy -f mpegts pipe:1
-  sleep 5
-  exit 3
-fi
+[ -z "$URL_PTV" ] && play_empty
 
 [ -f "$CH_TRANSCODE" ] && IS_NAME=`grep -m 1 "^$CH_NAME #" $CH_TRANSCODE | awk -F\\# '{print $1}' | sed 's/^[ \t]*//; s/[ \t]*$//'`
 [ "$FF_TRANSCODE" == "low" ] && ENDODE_ARG="-vf scale=iw/2:ih/2"
 [ -f "/run/lock/start.tvip" ] && TVIP="true"
 
 URL=`curl -s $URL_PTV`
+[ -z "$URL" ] && play_empty
+
+EMPTY_URL=`echo $URL | grep '/logo/empty-stream.mp4'`
+[ -n "$EMPTY_URL" ] && play_empty
 
 if [ "$STREAM_PTV" == "VLC" ]; then
   ACE_URL=`echo $URL | grep '/ace/getstream'`
   [ -z "$ACE_URL" -a "$HYBRID_MODE" == "yes" ] && STREAM_PTV="FFmpeg"
 fi
 
-if [ -f "/usr/bin/cvlc" -a "$STREAM_PTV" == "VLC" ]; then
+if [ "$STREAM_PTV" == "VLC" ]; then
+
   if [ "$LOG_VLC" == "info" ]; then
     DEBUG="-vvv"
   else
     DEBUG="--quiet"
   fi
-  BUF_TIME=$(expr $CACHE_PTV \* 1000)
 
+  BUF_TIME=$(expr $CACHE_PTV \* 1000)
   [ "$TVIP" == "true" ] && IS_NAME=""
+
   if [ -n "$IS_NAME" ]; then
       echo "*** IPTV stream --- VLC+Transcode --- mode: [$CH_NAME] - [$URL] (Cache time: 2 sec.)***" >&2
       if [ "$URL" != "" ]; then
@@ -97,8 +97,11 @@ if [ -f "/usr/bin/cvlc" -a "$STREAM_PTV" == "VLC" ]; then
         play_empty
       fi
   fi
+
 else
+
   [ "$TVIP" == "true" ] && IS_NAME=""
+
   if [ -n "$IS_NAME" ]; then
     echo "*** IPTV stream --- FFmpeg+Transcode --- mode: [$CH_NAME] - [$URL] ***" >&2
     if [ "$URL" != "" ]; then
@@ -121,4 +124,5 @@ else
       play_empty
     fi
   fi
+
 fi
