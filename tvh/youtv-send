@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2011-present Alex@ELEC (http://alexelec.in.ua)
+
+STAT_URL="$1"
+DEV_ID="$2"
+
+sleep 21
+
+while true; do
+    [ ! $(pidof ffmpeg) -a ! $(pidof vlc) ] && break
+    
+    curl -s -X OPTIONS "$STAT_URL" \
+         -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0" \
+         -H "Accept: */*" \
+         -H "Access-Control-Request-Method: GET" \
+         -H "Access-Control-Request-Headers: device-uuid" \
+         -H "Referer: https://youtv.com.ua/" >&2
+
+    curl -s -X GET "$STAT_URL" \
+         -H "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0" \
+         -H "Accept: */*" \
+         -H "Device-Uuid: $DEV_ID" >&2
+         
+    sleep 10
+done

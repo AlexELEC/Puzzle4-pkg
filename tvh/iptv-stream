@@ -8,6 +8,7 @@ WRK_DIR="/storage/.config/puzzle/tvh"
 CH_FILE="$WRK_DIR/tvh-channels.list"
 CH_TRANSCODE="$WRK_DIR/tvh-transcode.list"
 CH_VLCPLAY="$WRK_DIR/tvh-vlcplay.list"
+ID_FILE="$WRK_DIR/device.id"
 IS_NAME=''
 IS_VLC=''
 ACE_URL=''
@@ -19,6 +20,7 @@ CACHE_PTV=3
 IP4_TIME=5000
 ENDODE_ARG="-vf scale=-1:720"
 USER_AGENT="'SmartSDK'"
+#USER_AGENT="'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0'"
 
 CONFIG_LOG="$WRK_DIR/stream-tvh.conf"
 [ -f "$CONFIG_LOG" ] && . $CONFIG_LOG
@@ -53,6 +55,17 @@ fi
 DUNE_URL=`echo $URL | grep 'hls.peers.tv'`
 [ -n "$DUNE_URL" ] && USER_AGENT="'DuneHD/1.0.3'"
 
+pkill -9 youtv-send
+
+YOUTV_URL=`echo $URL | grep 'stream.youtv.com.ua'`
+if [ -n "$YOUTV_URL" -a -f "$ID_FILE" ]; then
+  DEV_ID=`cat $ID_FILE`
+  LAST_PART=`basename $URL`
+  STAT_URL=`echo "$URL" | sed "s|${LAST_PART}$|stats|"`
+  #echo "*** IPTV stream: [$DEV_ID] [$STAT_URL] ***" >&2
+  $WRK_DIR/youtv-send "$STAT_URL" "$DEV_ID" &
+fi
+
 if [ "$STREAM_PTV" == "VLC" ]; then
   ACE_URL=`echo $URL | grep '/ace/getstream'`
   if [ -z "$ACE_URL" -a "$HYBRID_MODE" == "yes" ]; then
@@ -82,11 +95,18 @@ if [ "$STREAM_PTV" == "VLC" ]; then
       /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -i - -max_muxing_queue_size 9999 -c:v mpeg2video -q:v 3 $ENDODE_ARG -c:a copy -c:s copy -ignore_unknown -map 0 -f mpegts pipe:1
   else
       echo "*** IPTV stream --- VLC --- mode: [$CH_NAME] - [$URL] (Cache time: $CACHE_PTV sec.)***" >&2
-      /usr/bin/cvlc $DEBUG --ipv4-timeout=$IP4_TIME --network-caching=$BUF_TIME \
-                           --no-drop-late-frames --no-skip-frames \
-                           "$URL" :http-user-agent="$USER_AGENT" \
-                           --sout '#std{mux=ts,access=file,dst=-}' | \
-      /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -i - -max_muxing_queue_size 9999 -c copy -ignore_unknown -map 0 -f mpegts pipe:1
+      if [ -f "/run/lock/start.tvip" ]; then
+          /usr/bin/cvlc $DEBUG --ipv4-timeout=$IP4_TIME --network-caching=$BUF_TIME \
+                               --no-drop-late-frames --no-skip-frames \
+                               "$URL" :http-user-agent="$USER_AGENT" \
+                               --sout '#std{mux=ts,access=file,dst=-}' | \
+          /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -i - -max_muxing_queue_size 9999 -c copy -ignore_unknown -map 0 -f mpegts pipe:1
+      else
+          /usr/bin/cvlc $DEBUG --ipv4-timeout=$IP4_TIME --network-caching=$BUF_TIME \
+                               --no-drop-late-frames --no-skip-frames \
+                               "$URL" :http-user-agent="$USER_AGENT" \
+                               --sout '#std{mux=ts,access=file,dst=-}'
+      fi
   fi
 
 else
