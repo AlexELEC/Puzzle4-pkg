@@ -113,10 +113,10 @@ else
 
   if [ -n "$IS_NAME" ]; then
       echo "*** IPTV stream --- FFmpeg+Transcode --- mode: [$CH_NAME] - [$URL] ***" >&2
-      /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -user-agent $USER_AGENT -i "$URL" -max_muxing_queue_size 9999 -c:v mpeg2video -q:v 3 $ENDODE_ARG -c:a copy -c:s copy -ignore_unknown -map 0 -f mpegts pipe:1
+      /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -user_agent $USER_AGENT -i "$URL" -max_muxing_queue_size 9999 -c:v mpeg2video -q:v 3 $ENDODE_ARG -c:a copy -c:s copy -ignore_unknown -map 0 -f mpegts pipe:1
   else
       echo "*** IPTV stream --- FFmpeg --- mode: [$CH_NAME] - [$URL] ***" >&2
-      /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -user-agent $USER_AGENT -i "$URL" -max_muxing_queue_size 9999 -c copy -ignore_unknown -map 0 -f mpegts pipe:1
+      /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -user_agent $USER_AGENT -i "$URL" -max_muxing_queue_size 9999 -c copy -ignore_unknown -map 0 -f mpegts pipe:1
   fi
 
 fi
