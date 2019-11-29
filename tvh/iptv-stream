@@ -4,7 +4,7 @@
 # Copyright (C) 2011-present Alex@ELEC (http://alexelec.in.ua)
 
 CH_NAME="$@"
-WRK_DIR="/storage/.config/puzzle/tvh"
+WRK_DIR=`dirname $0`
 CH_FILE="$WRK_DIR/tvh-channels.list"
 CH_TRANSCODE="$WRK_DIR/tvh-transcode.list"
 CH_VLCPLAY="$WRK_DIR/tvh-vlcplay.list"
@@ -30,7 +30,7 @@ CONFIG_FILE="/storage/.cache/services/ptv.conf"
 
 play_empty (){
   echo "*** IPTV stream --- Not found URL for ---: [$CH_NAME] ***" >&2
-  URL="/storage/.config/puzzle/logo/empty-stream.mp4"
+  URL="${WRK_DIR}/../logo/empty-stream.mp4"
   /usr/bin/ffmpeg -v quiet -hide_banner -i "$URL" -c copy -f mpegts pipe:1
   sleep 3
   exit 3
