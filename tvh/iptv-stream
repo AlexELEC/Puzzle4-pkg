@@ -15,7 +15,7 @@ ACE_URL=''
 
 LOG_VLC="quiet"
 LOG_FFMPEG="quiet"
-STREAM_PTV="VLC"
+STREAM_PTV="FFmpeg"
 CACHE_PTV=3
 IP4_TIME=5000
 ENDODE_ARG="-vf scale=-1:720"

@@ -54,7 +54,7 @@ try:
 		if upd_channels_cnt > 10:
 			upd_channels_cnt = 0
 			clean_log_cnt += 1
-		if clean_log_cnt > 180:
+		if clean_log_cnt > 300:
 			clean_log_cnt = 0
 			if os.path.exists(PTV_LOGFILE):
 				print('----- Clean log file -----')
