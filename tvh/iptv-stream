@@ -43,9 +43,6 @@ URL_PTV=`grep -m 1 "^$FIND_CH_NAME #" $CH_FILE | awk -F\\# '{print $2}' | sed 's
 URL=`curl -s $URL_PTV`
 [ -z "$URL" ] && play_empty
 
-EMPTY_URL=`echo $URL | grep '/logo/empty-stream.mp4'`
-[ -n "$EMPTY_URL" ] && play_empty
-
 if [ ! -f "/run/lock/start.tvip" ]; then
   [ -f "$CH_TRANSCODE" ] && IS_NAME=`grep -m 1 "^$CH_NAME #" $CH_TRANSCODE | awk -F\\# '{print $1}' | sed 's/^[ \t]*//; s/[ \t]*$//'`
 fi

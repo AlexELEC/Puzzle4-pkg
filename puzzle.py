@@ -7,6 +7,7 @@ import threading
 
 import server
 import core
+import proxy
 
 PTV_LOGFILE='/var/log/puzzle.log'
 root_dir = os.path.dirname(sys.argv[0])
@@ -28,16 +29,21 @@ sys.stdout=Logger(PTV_LOGFILE)
 
 ip = core.ip
 port = core.port
+proxy_port = port + 1
 
 print('\n------------ Starting Puzzle-TV v%s ------------') % server.version()
 print ('***')
-print('WEBUI:        http://'+ip+':'+str(port))
-print('PLAYLIST:     http://'+ip+':'+str(port)+'/playlist')
-print('TVH PLAYLIST: http://'+ip+':'+str(port)+'/tvhlist')
+print('WEBUI:          http://'+ip+':'+str(port))
+print('PLAYLIST:       http://'+ip+':'+str(port)+'/playlist')
+print('TVH PLAYLIST:   http://'+ip+':'+str(port)+'/tvhlist')
+print('PROXY PLAYLIST: http://'+ip+':'+str(port)+'/proxylist')
 print ('***')
 
 serv = server.MyThreadingHTTPServer(("0.0.0.0",port), server.HttpProcessor)
 threading.Thread(target=serv.serve_forever).start()
+
+serv_proxy = proxy.ThreadingSimpleServer(("0.0.0.0",proxy_port), proxy.ProxyRequestHandler)
+threading.Thread(target=serv_proxy.serve_forever).start()
 
 print('------------- Starting Puzzle-TV: OK --------------')
 print('\nDate: %s\n') % time.strftime('%Y-%m-%d %H:%M:%S')
@@ -63,7 +69,13 @@ try:
 except KeyboardInterrupt:
 	print '\n...Program Stopped Manually!\n'
 
-try:serv.shutdown()
-except:pass
+try:
+	serv_proxy.server_close()
+	serv_proxy.shutdown()
+except: pass
+try:
+	serv.server_close()
+	serv.shutdown()
+except: pass
 
 print('------------ Stopped Puzzle-TV: OK ------------\n')
