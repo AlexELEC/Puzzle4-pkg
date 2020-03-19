@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (C) 2011-present Alex@ELEC (http://alexelec.in.ua)

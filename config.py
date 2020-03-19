@@ -21,14 +21,6 @@ class PuzzleConf():
 	input_buff = 1000
 	# output buffer in milliseconds (0 .. 60000)
 	output_buff = 2000
-	# sources that will be buffered
-	sources_buff = [
-		'ott.onlineott.tv',
-		'ott.ipstream.one',
-		'ace/getstream',
-		'zproxy/step',
-		'strm.yandex.ru',
-		'rt-cache1.peers.tv',
-		'iptv1.satbiling.com',
-		'api-tv.ipnet.ua',
-		]
+	# sources that will not be buffered (comma separated)
+	# example: sources_not_buff = ['cdn.adultiptv.net',]
+	sources_not_buff = []
