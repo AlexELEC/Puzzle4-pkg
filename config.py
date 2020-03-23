@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ''' Puzzle configuration script. Edit this file. '''
 
 class PuzzleConf():
@@ -10,7 +11,13 @@ class PuzzleConf():
 	# connection timeout in seconds
 	check_timeout = 1
 	#------------------------------------------------------------
-	# Proxy (restreamer) channels config
+	# AE IPTV playlist ZProxy (Zproxy local)
+	#------------------------------------------------------------
+	#
+	# cache keys - True / False (yes / no)
+	zkeys_cache = True
+	#------------------------------------------------------------
+	# Pproxy (restreamer) channels config
 	#------------------------------------------------------------
 	#
 	# user agent
