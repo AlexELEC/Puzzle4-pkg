@@ -11,19 +11,23 @@ class PuzzleConf():
 	# connection timeout in seconds
 	check_timeout = 1
 	#------------------------------------------------------------
-	# AE IPTV playlist ZProxy (Zproxy local)
+	# AE IPTV playlist Zproxy (Zproxy local)
 	#------------------------------------------------------------
 	#
-	# cache keys - True / False (yes / no)
+	# enable/disable cache keys - True/False
 	zkeys_cache = True
 	#------------------------------------------------------------
-	# Pproxy (restreamer) channels config
+	# Pproxy (restreamer) config
 	#------------------------------------------------------------
 	#
 	# user agent
 	usr_agent = 'Restream/5.20408.171030 (mag250, mag250) SmartSDK/1.5.63-rt-25 Qt/4.7.3 API/0.30.0'
 	# chunk size in bytes (1024 .. 8192)
 	chunk_size = 2048
+	# enable/disable buffering - True/False
+	buffering = True
+	# simple prebuffering in megabytes (0 .. 20) only when buffering is disabled
+	simple_prebuff = 1
 	# input buffer in milliseconds (0 .. 60000)
 	input_buff = 1000
 	# output buffer in milliseconds (0 .. 60000)
