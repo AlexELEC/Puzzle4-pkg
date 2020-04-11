@@ -11,12 +11,6 @@ class PuzzleConf():
 	# connection timeout in seconds
 	check_timeout = 1
 	#------------------------------------------------------------
-	# AE IPTV playlist Zproxy (Zproxy local)
-	#------------------------------------------------------------
-	#
-	# enable/disable cache keys - True/False
-	zkeys_cache = True
-	#------------------------------------------------------------
 	# Pproxy (restreamer) config
 	#------------------------------------------------------------
 	#

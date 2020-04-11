@@ -31,7 +31,7 @@ ip = core.ip
 port = core.port
 proxy_port = port + 1
 
-print('\n------------ Starting Puzzle-TV v%s ------------') % server.version()
+print('\n------------ Starting Puzzle-TV v%s ------------') % core.VERSION
 print ('***')
 print('WEBUI:          http://'+ip+':'+str(port))
 print('PLAYLIST:       http://'+ip+':'+str(port)+'/playlist')
