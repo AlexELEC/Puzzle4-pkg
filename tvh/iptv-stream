@@ -16,11 +16,10 @@ ACE_URL=''
 LOG_VLC="quiet"
 LOG_FFMPEG="quiet"
 STREAM_PTV="FFmpeg"
-CACHE_PTV=3
+CACHE_PTV=2
 IP4_TIME=5000
 ENDODE_ARG="-vf scale=-1:720"
-USER_AGENT="'SmartSDK'"
-#USER_AGENT="'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0'"
+USER_AGENT="'Restream/5.20408.171030'"
 
 CONFIG_LOG="$WRK_DIR/stream-tvh.conf"
 [ -f "$CONFIG_LOG" ] && . $CONFIG_LOG
@@ -49,32 +48,31 @@ fi
 
 [ "$FF_TRANSCODE" == "low" ] && ENDODE_ARG="-vf scale=iw/2:ih/2"
 
-DUNE_URL=`echo $URL | grep 'hls.peers.tv'`
-[ -n "$DUNE_URL" ] && USER_AGENT="'DuneHD/1.0.3'"
+PEERS_URL=`echo $URL | grep 'hls.peers.tv'`
+[ -n "$PEERS_URL" ] && USER_AGENT="'Peers.TV/6.26.1 Android/9.0 phone/Xiaomi'"
 
-pkill -9 youtv-send
+PROSTO_URL=`echo $URL | grep 'iptv.prosto.tv'`
+[ -n "$PROSTO_URL" ] && USER_AGENT="'VLC/3.0.8'"
 
 YOUTV_URL=`echo $URL | grep 'stream.youtv.com.ua'`
 if [ -n "$YOUTV_URL" -a -f "$ID_FILE" ]; then
+  pkill -9 youtv-send > /dev/null 2>&1
   DEV_ID=`cat $ID_FILE`
   LAST_PART=`basename $URL`
   STAT_URL=`echo "$URL" | sed "s|${LAST_PART}$|stats|"`
   $WRK_DIR/youtv-send "$STAT_URL" "$DEV_ID" &
 fi
 
-if [ "$STREAM_PTV" == "VLC" ]; then
-  if [ -f "/run/lock/start.tvip" ]; then
-    STREAM_PTV="FFmpeg"
-  elif [ "$HYBRID_MODE" == "yes" ]; then
-    ACE_URL=`echo $URL | grep '/ace/getstream'`
-    if [ -z "$ACE_URL" ]; then
-      [ -f "$CH_VLCPLAY" ] && IS_VLC=`grep -m 1 "^$CH_NAME #" $CH_VLCPLAY | awk -F\\# '{print $1}' | sed 's/^[ \t]*//; s/[ \t]*$//'`
-      [ -z "$IS_VLC" ] && STREAM_PTV="FFmpeg"
-    fi
+if [ "$STREAM_PTV" == "VLC" ] && [ "$HYBRID_MODE" == "yes" ]; then
+  ACE_URL=`echo $URL | grep '/ace/getstream'`
+  if [ -z "$ACE_URL" ]; then
+    [ -f "$CH_VLCPLAY" ] && IS_VLC=`grep -m 1 "^$CH_NAME #" $CH_VLCPLAY | awk -F\\# '{print $1}' | sed 's/^[ \t]*//; s/[ \t]*$//'`
+    [ -z "$IS_VLC" ] && STREAM_PTV="FFmpeg"
   fi
 fi
 
 echo "*** IPTV stream play --- $CH_NAME --- [$URL] ***" >&2
+echo "*** IPTV stream agnt -- $USER_AGENT -- ***" >&2
 
 if [ "$STREAM_PTV" == "VLC" ]; then
 
@@ -89,18 +87,16 @@ if [ "$STREAM_PTV" == "VLC" ]; then
   if [ -n "$IS_NAME" ]; then
       echo "*** IPTV stream mode --- VLC+Transcode --- (Cache time: 1 sec.)***" >&2
       /usr/bin/cvlc $DEBUG --ipv4-timeout=$IP4_TIME --network-caching=1000 \
-                           --no-drop-late-frames --no-skip-frames --http-continuous --http-reconnect \
+                           --no-drop-late-frames --no-skip-frames \
                            "$URL" :http-user-agent="$USER_AGENT" \
-                           --sout-keep --sout '#std{mux=ts,access=file,dst=-}' | \
+                           --sout-mux-caching=1000 --sout '#std{mux=ts,access=file,dst=-}' | \
       /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -i - -max_muxing_queue_size 9999 -c:v mpeg2video -q:v 3 $ENDODE_ARG -c:a copy -c:s copy -ignore_unknown -map 0 -f mpegts pipe:1
   else
       echo "*** IPTV stream mode --- VLC --- (Cache time: $CACHE_PTV sec.)***" >&2
-      /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -user_agent $USER_AGENT -i "$URL" \
-                           -flags nobuffer -flags low_delay -avioflags direct -strict experimental -max_muxing_queue_size 9999 \
-                           -c copy -ignore_unknown -map 0 -f mpegts - | \
-      /usr/bin/cvlc $DEBUG --network-caching=$BUF_TIME --http-continuous --http-reconnect \
+      /usr/bin/cvlc $DEBUG --ipv4-timeout=$IP4_TIME --network-caching=1000 \
                            --no-drop-late-frames --no-skip-frames - \
-                           --sout-keep --sout '#std{mux=ts,access=file,dst=-}'
+                           "$URL" :http-user-agent="$USER_AGENT" \
+                           --sout-mux-caching=$BUF_TIME --sout '#std{mux=ts,access=file,dst=-}'
   fi
 
 else

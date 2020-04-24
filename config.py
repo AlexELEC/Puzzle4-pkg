@@ -11,6 +11,12 @@ class PuzzleConf():
 	# connection timeout in seconds
 	check_timeout = 1
 	#------------------------------------------------------------
+	# Peers.tv config
+	#------------------------------------------------------------
+	#
+	# user agent for peers.tv
+	peers_agent = 'Peers.TV/6.26.1 Android/9.0 phone/Xiaomi'
+	#------------------------------------------------------------
 	# Pproxy (restreamer) config
 	#------------------------------------------------------------
 	#
