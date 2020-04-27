@@ -19,6 +19,7 @@ STREAM_PTV="FFmpeg"
 CACHE_PTV=2
 IP4_TIME=5000
 ENDODE_ARG="-vf scale=-1:720"
+REFERER=''
 USER_AGENT="'Restream/5.20408.171030'"
 
 CONFIG_LOG="$WRK_DIR/stream-tvh.conf"
@@ -49,7 +50,7 @@ fi
 [ "$FF_TRANSCODE" == "low" ] && ENDODE_ARG="-vf scale=iw/2:ih/2"
 
 PEERS_URL=`echo $URL | grep 'hls.peers.tv'`
-[ -n "$PEERS_URL" ] && USER_AGENT="'Peers.TV/6.26.1 Android/9.0 phone/Xiaomi'"
+[ -n "$PEERS_URL" ] && USER_AGENT="'Mozilla/5.0'"
 
 PROSTO_URL=`echo $URL | grep 'iptv.prosto.tv'`
 [ -n "$PROSTO_URL" ] && USER_AGENT="'VLC/3.0.8'"
@@ -84,29 +85,39 @@ if [ "$STREAM_PTV" == "VLC" ]; then
 
   BUF_TIME=$(expr $CACHE_PTV \* 1000)
 
+  if [ -n "$PEERS_URL" ]; then
+    REFERER=":http-referrer='http://peers.tv'"
+    echo "*** IPTV stream refr --- http://peers.tv --- ***" >&2
+  fi
+
   if [ -n "$IS_NAME" ]; then
       echo "*** IPTV stream mode --- VLC+Transcode --- (Cache time: 1 sec.)***" >&2
       /usr/bin/cvlc $DEBUG --ipv4-timeout=$IP4_TIME --network-caching=1000 \
                            --no-drop-late-frames --no-skip-frames \
-                           "$URL" :http-user-agent="$USER_AGENT" \
+                           "$URL" :http-user-agent="$USER_AGENT" "$REFERER" \
                            --sout-mux-caching=1000 --sout '#std{mux=ts,access=file,dst=-}' | \
       /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -i - -max_muxing_queue_size 9999 -c:v mpeg2video -q:v 3 $ENDODE_ARG -c:a copy -c:s copy -ignore_unknown -map 0 -f mpegts pipe:1
   else
       echo "*** IPTV stream mode --- VLC --- (Cache time: $CACHE_PTV sec.)***" >&2
       /usr/bin/cvlc $DEBUG --ipv4-timeout=$IP4_TIME --network-caching=1000 \
                            --no-drop-late-frames --no-skip-frames - \
-                           "$URL" :http-user-agent="$USER_AGENT" \
+                           "$URL" :http-user-agent="$USER_AGENT" "$REFERER" \
                            --sout-mux-caching=$BUF_TIME --sout '#std{mux=ts,access=file,dst=-}'
   fi
 
 else
 
+  if [ -n "$PEERS_URL" ]; then
+    REFERER='Referer: http://peers.tv'
+    echo "*** IPTV stream refr --- http://peers.tv --- ***" >&2
+  fi
+
   if [ -n "$IS_NAME" ]; then
       echo "*** IPTV stream mode --- FFmpeg+Transcode --- ***" >&2
-      /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -user_agent $USER_AGENT -i "$URL" -max_muxing_queue_size 9999 -c:v mpeg2video -q:v 3 $ENDODE_ARG -c:a copy -c:s copy -ignore_unknown -map 0 -f mpegts pipe:1
+      /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -user_agent $USER_AGENT -headers "$REFERER" -i "$URL" -max_muxing_queue_size 9999 -c:v mpeg2video -q:v 3 $ENDODE_ARG -c:a copy -c:s copy -ignore_unknown -map 0 -f mpegts pipe:1
   else
       echo "*** IPTV stream mode --- FFmpeg --- ***" >&2
-      /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -user_agent $USER_AGENT -i "$URL" -flags nobuffer -flags low_delay -avioflags direct -strict experimental -max_muxing_queue_size 9999 -c copy -ignore_unknown -map 0 -f mpegts pipe:1
+      /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -user_agent $USER_AGENT -headers "$REFERER" -i "$URL" -flags nobuffer -flags low_delay -avioflags direct -strict experimental -max_muxing_queue_size 9999 -c copy -ignore_unknown -map 0 -f mpegts pipe:1
   fi
 
 fi

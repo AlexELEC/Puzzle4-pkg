@@ -14,8 +14,8 @@ class PuzzleConf():
 	# Peers.tv config
 	#------------------------------------------------------------
 	#
-	# user agent for peers.tv
-	peers_agent = 'Peers.TV/6.26.1 Android/9.0 phone/Xiaomi'
+	# user agent for peers.tv (sample: 'Peers.TV/6.26.1 Android/9.0 phone/Xiaomi')
+	peers_agent = 'Mozilla/5.0'
 	#------------------------------------------------------------
 	# Pproxy (restreamer) config
 	#------------------------------------------------------------
