@@ -1,0 +1,25 @@
+#!/usr/bin/python
+# coding: utf-8
+
+#------------------------------------------------------------
+# URLs to FFmpeg list
+#------------------------------------------------------------
+# example: ffmpeg_urls = ['cdn.adultiptv.net',]
+
+ffmpeg_urls = ['cdn.adultiptv.net', 'app.live.112.events']
+
+#------------------------------------------------------------
+#						Main
+#------------------------------------------------------------
+from sys import argv
+
+def check():
+	try:
+		in_url = argv[1]
+		for s in ffmpeg_urls:
+			if s in in_url: return True
+		return False
+	except: return False
+
+if check(): print ('True')
+else: print ('False')

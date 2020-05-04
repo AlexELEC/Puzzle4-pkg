@@ -7,17 +7,15 @@ CH_NAME="$@"
 WRK_DIR=`dirname $0`
 CH_FILE="$WRK_DIR/tvh-channels.list"
 CH_TRANSCODE="$WRK_DIR/tvh-transcode.list"
-CH_VLCPLAY="$WRK_DIR/tvh-vlcplay.list"
+CH_FFPLAY="$WRK_DIR/tvh-ffmpeg.check"
 ID_FILE="$WRK_DIR/device.id"
 IS_NAME=''
-IS_VLC=''
-ACE_URL=''
 
 LOG_VLC="quiet"
 LOG_FFMPEG="quiet"
 STREAM_PTV="FFmpeg"
-CACHE_PTV=2
-IP4_TIME=5000
+CACHE_PTV=1
+IP4_TIME=3000
 ENDODE_ARG="-vf scale=-1:720"
 REFERER=''
 USER_AGENT="'Restream/5.20408.171030'"
@@ -64,12 +62,9 @@ if [ -n "$YOUTV_URL" -a -f "$ID_FILE" ]; then
   $WRK_DIR/youtv-send "$STAT_URL" "$DEV_ID" &
 fi
 
-if [ "$STREAM_PTV" == "VLC" ] && [ "$HYBRID_MODE" == "yes" ]; then
-  ACE_URL=`echo $URL | grep '/ace/getstream'`
-  if [ -z "$ACE_URL" ]; then
-    [ -f "$CH_VLCPLAY" ] && IS_VLC=`grep -m 1 "^$CH_NAME #" $CH_VLCPLAY | awk -F\\# '{print $1}' | sed 's/^[ \t]*//; s/[ \t]*$//'`
-    [ -z "$IS_VLC" ] && STREAM_PTV="FFmpeg"
-  fi
+if [ "$STREAM_PTV" == "VLC" ] && [ -f "$CH_FFPLAY" ]; then
+  IS_FFMPEG=`/usr/bin/python $CH_FFPLAY "$URL"`
+  [ "$IS_FFMPEG" == "True" ] && STREAM_PTV="FFmpeg"
 fi
 
 echo "*** IPTV stream play --- $CH_NAME --- [$URL] ***" >&2
@@ -93,14 +88,14 @@ if [ "$STREAM_PTV" == "VLC" ]; then
   if [ -n "$IS_NAME" ]; then
       echo "*** IPTV stream mode --- VLC+Transcode --- (Cache time: 1 sec.)***" >&2
       /usr/bin/cvlc $DEBUG --ipv4-timeout=$IP4_TIME --network-caching=1000 \
-                           --no-drop-late-frames --no-skip-frames \
+                           --no-drop-late-frames --no-skip-frames --play-and-exit \
                            "$URL" :http-user-agent="$USER_AGENT" "$REFERER" \
                            --sout-mux-caching=1000 --sout '#std{mux=ts,access=file,dst=-}' | \
       /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -i - -max_muxing_queue_size 9999 -c:v mpeg2video -q:v 3 $ENDODE_ARG -c:a copy -c:s copy -ignore_unknown -map 0 -f mpegts pipe:1
   else
       echo "*** IPTV stream mode --- VLC --- (Cache time: $CACHE_PTV sec.)***" >&2
       /usr/bin/cvlc $DEBUG --ipv4-timeout=$IP4_TIME --network-caching=1000 \
-                           --no-drop-late-frames --no-skip-frames - \
+                           --no-drop-late-frames --no-skip-frames --play-and-exit \
                            "$URL" :http-user-agent="$USER_AGENT" "$REFERER" \
                            --sout-mux-caching=$BUF_TIME --sout '#std{mux=ts,access=file,dst=-}'
   fi

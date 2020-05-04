@@ -31,7 +31,7 @@ class PuzzleConf():
 	# input buffer in milliseconds (0 .. 60000)
 	input_buff = 1000
 	# output buffer in milliseconds (0 .. 60000)
-	output_buff = 2000
+	output_buff = 1000
 	# sources that will not be buffered (comma separated)
 	# example: sources_not_buff = ['cdn.adultiptv.net',]
 	sources_not_buff = []
