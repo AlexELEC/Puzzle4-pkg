@@ -11,27 +11,20 @@ class PuzzleConf():
 	# connection timeout in seconds
 	check_timeout = 1
 	#------------------------------------------------------------
-	# Peers.tv config
-	#------------------------------------------------------------
-	#
-	# user agent for peers.tv (sample: 'Peers.TV/6.26.1 Android/9.0 phone/Xiaomi')
-	peers_agent = 'Mozilla/5.0'
-	#------------------------------------------------------------
 	# Pproxy (restreamer) config
 	#------------------------------------------------------------
 	#
-	# user agent
+	# generic user agent
 	usr_agent = 'Restream/5.20408.171030 (mag250, mag250) SmartSDK/1.5.63-rt-25 Qt/4.7.3 API/0.30.0'
-	# chunk size in bytes (1024 .. 8192)
-	chunk_size = 2048
-	# enable/disable buffering - True/False
-	buffering = True
-	# simple prebuffering in megabytes (0 .. 20) only when buffering is disabled
-	simple_prebuff = 1
-	# input buffer in milliseconds (0 .. 60000)
-	input_buff = 1000
-	# output buffer in milliseconds (0 .. 60000)
-	output_buff = 1000
-	# sources that will not be buffered (comma separated)
-	# example: sources_not_buff = ['cdn.adultiptv.net',]
-	sources_not_buff = []
+	# user agent for peers.tv
+	peers_agent = 'Mozilla/5.0'
+	# TS streams buffer size in megabytes (0 .. 20)
+	buffer_ts = 5
+	# HLS streams buffer size in megabytes (0 .. 20)
+	buffer_hls = 10
+	# size of the thread pool used to download HLS segments (1 .. 10)
+	hls_threads = 4
+	# how many segments from the end to start live HLS streams on (1 .. 10)
+	hls_edge = 3
+	# wait until the HLS buffer is full
+	wait_buffer = False

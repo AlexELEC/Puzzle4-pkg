@@ -28,7 +28,7 @@ echo ""
 echo -e "${COL_BLUE}Creating release $PTV_NAME-$VERSION...${COL_RESET}"
 echo ""
 
-cp -a serv tvh webui.files $RELEASE_DIR
+cp -a serv streamlink tvh webui.files $RELEASE_DIR
 cp -a *.py *.empty *.htm *.so version $RELEASE_DIR
 
 pushd $PROJECT_PATH/$RELEASE_DIR > /dev/null

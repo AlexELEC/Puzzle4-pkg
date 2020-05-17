@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2011-present Alex@ELEC (http://alexelec.in.ua)
+
+CH_NAME="$@"
+WRK_DIR=`dirname $0`
+CH_FILE="$WRK_DIR/tvh-channels.list"
+
+FIND_CH_NAME=`echo "$CH_NAME" | sed 's|\[|\\\[|g; s|\]|\\\]|g'`
+URL_PTV=`grep -m 1 "^$FIND_CH_NAME #" $CH_FILE | awk -F\\# '{print $2}' | sed 's/^[ \t]*//; s/[ \t]*$//'`
+
+echo "*** IPTV stream Pproxy: $URL_PTV ***" >&2
+/usr/bin/ffmpeg -v quiet -hide_banner -i "$URL_PTV" -flags nobuffer -flags low_delay -avioflags direct -strict experimental -max_muxing_queue_size 9999 -c copy -ignore_unknown -map 0 -f mpegts pipe:1

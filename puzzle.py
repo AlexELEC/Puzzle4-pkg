@@ -7,7 +7,7 @@ import threading
 
 import server
 import core
-import proxy
+import settings
 
 PTV_LOGFILE='/var/log/puzzle.log'
 root_dir = os.path.dirname(sys.argv[0])
@@ -37,18 +37,31 @@ print('WEBUI:          http://'+ip+':'+str(port))
 print('PLAYLIST:       http://'+ip+':'+str(port)+'/playlist')
 print('TVH PLAYLIST:   http://'+ip+':'+str(port)+'/tvhlist')
 print('PROXY PLAYLIST: http://'+ip+':'+str(port)+'/proxylist')
+print('TVH PROXY LIST: http://'+ip+':'+str(port)+'/tvhproxylist')
 print ('***')
 
 serv = server.MyThreadingHTTPServer(("0.0.0.0",port), server.HttpProcessor)
 threading.Thread(target=serv.serve_forever).start()
 
-serv_proxy = proxy.ThreadingSimpleServer(("0.0.0.0",proxy_port), proxy.ProxyRequestHandler)
-threading.Thread(target=serv_proxy.serve_forever).start()
-
 print('------------- Starting Puzzle-TV: OK --------------')
-print('\nDate: %s\n') % time.strftime('%Y-%m-%d %H:%M:%S')
+print('Date: %s\n') % time.strftime('%Y-%m-%d %H:%M:%S')
 
-upd_channels_cnt = 0
+core.refresh_cnl()
+
+serv_proxy = None
+def pproxy():
+	import proxy
+	global serv_proxy
+	print('\n------------- Starting Pproxy-TV: OK --------------')
+	print('Date: %s\n') % time.strftime('%Y-%m-%d %H:%M:%S')
+	serv_proxy = proxy.ThreadingSimpleServer(("0.0.0.0",proxy_port), proxy.ProxyRequestHandler)
+	serv_proxy.serve_forever()
+
+enable_proxy = settings.get('pproxy')
+if enable_proxy == 'true':
+	threading.Thread(target=pproxy).start()
+
+upd_channels_cnt = 1
 clean_log_cnt = 0
 
 try:
