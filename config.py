@@ -16,8 +16,6 @@ class PuzzleConf():
 	#
 	# generic user agent
 	usr_agent = 'Restream/5.20408.171030 (mag250, mag250) SmartSDK/1.5.63-rt-25 Qt/4.7.3 API/0.30.0'
-	# user agent for peers.tv
-	peers_agent = 'Mozilla/5.0'
 	# TS streams buffer size in megabytes (0 .. 20)
 	buffer_ts = 5
 	# HLS streams buffer size in megabytes (0 .. 20)

@@ -15,11 +15,10 @@ LOG_VLC="quiet"
 LOG_FFMPEG="quiet"
 
 ################################################################################
-# User-Agent & Referer
+# User-Agent
 ################################################################################
 
 USER_AGENT="'Restream/5.20408.171030'"
-REFERER=''
 
 ################################################################################
 
@@ -51,9 +50,6 @@ URL_PTV=`grep -m 1 "^$FIND_CH_NAME #" $CH_FILE | awk -F\\# '{print $2}' | sed 's
 URL=`curl -s $URL_PTV`
 [ -z "$URL" ] && play_empty
 
-PEERS_URL=`echo $URL | grep 'hls.peers.tv'`
-[ -n "$PEERS_URL" ] && USER_AGENT="'Mozilla/5.0'"
-
 PROSTO_URL=`echo $URL | grep 'iptv.prosto.tv'`
 [ -n "$PROSTO_URL" ] && USER_AGENT="'VLC/3.0.8'"
 
@@ -75,11 +71,6 @@ if [ "$STREAM_PTV" == "VLC" ]; then
 
   BUF_TIME=$(expr $CACHE_PTV \* 1000)
 
-  if [ -n "$PEERS_URL" ]; then
-    REFERER=":http-referrer='http://peers.tv'"
-    echo "*** IPTV stream refr --- http://peers.tv --- ***" >&2
-  fi
-
   IS_HLS=`echo $URL | grep '.m3u8'`
   if [ -n "$IS_HLS" ]; then
     NET_CACHE=0
@@ -94,18 +85,13 @@ if [ "$STREAM_PTV" == "VLC" ]; then
   echo "*** IPTV stream mode --- VLC --- ($MODE_CACHE cache time: $CACHE_PTV sec.)***" >&2
   /usr/bin/cvlc $DEBUG --ipv4-timeout=$IP4_TIME --network-caching=$NET_CACHE \
                        --no-drop-late-frames --no-skip-frames --play-and-exit \
-                       "$URL" :http-user-agent="$USER_AGENT" "$REFERER" \
+                       "$URL" :http-user-agent="$USER_AGENT" \
                        --sout-mux-caching=$MUX_CACHE --sout '#std{mux=ts,access=file,dst=-}'
 
 else
 
-  if [ -n "$PEERS_URL" ]; then
-    REFERER='Referer: http://peers.tv'
-    echo "*** IPTV stream refr --- http://peers.tv --- ***" >&2
-  fi
-
   echo "*** IPTV stream mode --- FFmpeg --- ***" >&2
-  /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -user_agent $USER_AGENT -headers "$REFERER" \
+  /usr/bin/ffmpeg -v $LOG_FFMPEG -hide_banner -user_agent $USER_AGENT \
                   -i "$URL" -flags nobuffer -flags low_delay -avioflags direct -strict experimental \
                   -max_muxing_queue_size 9999 -c copy -ignore_unknown -map 0 -f mpegts pipe:1
 
