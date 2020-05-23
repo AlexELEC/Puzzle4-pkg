@@ -24,5 +24,7 @@ class PuzzleConf():
 	hls_threads = 4
 	# how many segments from the end to start live HLS streams on (1 .. 10)
 	hls_edge = 3
+	# HLS list reload mode: default, duration, segment, average
+	hls_reload = 'default'
 	# wait until the HLS buffer is full
 	wait_buffer = False

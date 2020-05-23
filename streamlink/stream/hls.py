@@ -177,9 +177,10 @@ class HLSStreamWorker(SegmentedStreamWorker):
         self.playlist_end = None
         self.playlist_sequence = -1
         self.playlist_sequences = []
-        self.playlist_reload_time = 15
+        self.playlist_reload_time = 12
         self.live_edge = self.session.options.get("hls-live-edge")
         self.playlist_reload_retries = self.session.options.get("hls-playlist-reload-attempts")
+        self.playlist_reload_time_override = self.session.options.get("hls-playlist-reload-time")
         self.duration_offset_start = int(self.stream.start_offset + (self.session.options.get("hls-start-offset") or 0))
         self.duration_limit = self.stream.duration or (
             int(self.session.options.get("hls-duration")) if self.session.options.get("hls-duration") else None)
@@ -233,18 +234,31 @@ class HLSStreamWorker(SegmentedStreamWorker):
         sequences = [Sequence(media_sequence + i, s)
                      for i, s in enumerate(playlist.segments)]
 
-        self.process_sequences(playlist, sequences)
+        self.playlist_reload_time = self._playlist_reload_time(playlist, sequences)
+        #print "\nReloading playlist time: {}".format(self.playlist_reload_time)
 
-    def _set_playlist_reload_time(self, playlist, sequences):
-        self.playlist_reload_time = (playlist.target_duration
-                                     or len(sequences) > 0 and sequences[-1].segment.duration)
+        if sequences:
+            self.process_sequences(playlist, sequences)
+
+    def _playlist_reload_time(self, playlist, sequences):
+        reload_default_time = (playlist.target_duration or len(sequences) > 0 and sequences[-1].segment.duration)
+
+        if self.playlist_reload_time_override == "segment":
+            if len(sequences) > 0:
+                reload_default_time = sequences[-1].segment.duration
+        elif self.playlist_reload_time_override == "average":
+            if len(sequences) > 1: 
+                reload_default_time = sum([s.segment.duration for s in sequences[-2:]]) / 2
+        elif self.playlist_reload_time_override == "duration":
+            if playlist.target_duration:
+                reload_default_time = playlist.target_duration
+
+        if not reload_default_time:
+            reload_default_time = self.playlist_reload_time
+
+        return reload_default_time
 
     def process_sequences(self, playlist, sequences):
-        self._set_playlist_reload_time(playlist, sequences)
-
-        if not sequences:
-            return
-
         first_sequence, last_sequence = sequences[0], sequences[-1]
 
         if first_sequence.segment.key and first_sequence.segment.key.method != "NONE":
